@@ -27,5 +27,5 @@
 ### <samp>Featured Projects</samp>
 
 - <samp><strong><a href="https://github.com/adarzhpathade/Eligify">Eligify AI - Government Scheme Discovery Platform</a></strong>: A full-stack platform built with Next.js, TypeScript, Tailwind, Supabase, and Drizzle ORM. Features AI-assisted scheme discovery, secure auth, and document verification.</samp>
-- <samp><strong><a href="https://github.com/adarzhpathade/StoreSync">StoreSync – Store Management Platform</a></strong>: A full-stack store management system for small businesses featuring POS billing, inventory management, worker management, and PDF generation.</samp>
+- <samp><strong><a href="https://github.com/adarzhpathade/Store-Supervision-Platform">StoreSync – Store Management Platform</a></strong>: A full-stack store management system for small businesses featuring POS billing, inventory management, worker management, and PDF generation.</samp>
 
