@@ -13,15 +13,16 @@
 
 <img src="./hd-about.svg" width="620" alt="about"/>
 
-> B.Tech in Computer Science & Information Technology student at Acropolis Institute of Technology and Research (2024-2028).<br>
-> Passionate about writing clean, maintainable, and scalable code.
+> B.Tech in CS & IT at Acropolis Institute of Technology and Research (2024-2028).<br>
+> Passionate about creating visually engaging digital experiences through modern UI engineering.
 
-Full-Stack Web Developer with experience building responsive and user-friendly web<br>
-applications. Strong understanding of Data Structures & Algorithms in Java.
+Frontend-focused Web Developer building responsive and user-centric web applications.<br>
+Currently expanding expertise in full-stack architecture, while strengthening problem-solving<br>
+skills through Data Structures & Algorithms in Java.
 
 <img src="./hd-stack.svg" width="620" alt="stack"/>
 
-<samp>java &nbsp; c++ &nbsp; javascript &nbsp; typescript &nbsp; react.js &nbsp; next.js &nbsp; node.js &nbsp; express.js &nbsp; mongodb &nbsp; postgresql &nbsp; supabase &nbsp; tailwind css</samp>
+<samp>javascript &nbsp; typescript &nbsp; java &nbsp; react.js &nbsp; next.js &nbsp; tailwind css &nbsp; gsap &nbsp; framer motion &nbsp; node.js &nbsp; express.js &nbsp; postgresql &nbsp; mongodb &nbsp; drizzle orm</samp>
 
 <img src="./hd-projects.svg" width="620" alt="projects"/>
 
