@@ -13,30 +13,26 @@
 <br>
 
 ### <samp>About Me</samp>
-<samp>
-I am passionate about creating visually engaging digital experiences through modern UI engineering. I specialize in building responsive, accessible, and user-centric web applications. Currently, I am expanding my expertise in full-stack architecture while strengthening my problem-solving skills through Data Structures & Algorithms in Java.
-</samp>
+<samp>I am passionate about creating visually engaging digital experiences through modern UI engineering. I specialize in building responsive, accessible, and user-centric web applications. Currently, I am expanding my expertise in full-stack architecture while strengthening my problem-solving skills through Data Structures & Algorithms in Java.</samp>
 
 ### <samp>Tech Stack</samp>
-<samp>
-- <strong>Languages:</strong> Java, JavaScript, TypeScript, HTML5, CSS3
-- <strong>Frontend:</strong> React.js, Next.js, Tailwind CSS, GSAP, Framer Motion
-- <strong>Backend:</strong> Node.js, Express.js, PostgreSQL, MongoDB, Drizzle ORM
-- <strong>Tools:</strong> Git, GitHub, VS Code, Figma, Postman, Vercel
-</samp>
+
+- <samp><strong>Languages:</strong> Java, JavaScript, TypeScript, HTML5, CSS3</samp>
+- <samp><strong>Frontend:</strong> React.js, Next.js, Tailwind CSS, GSAP, Framer Motion</samp>
+- <samp><strong>Backend:</strong> Node.js, Express.js, PostgreSQL, MongoDB, Drizzle ORM</samp>
+- <samp><strong>Tools:</strong> Git, GitHub, VS Code, Figma, Postman, Vercel</samp>
 
 ### <samp>Featured Projects</samp>
-<samp>
-- <strong><a href="https://github.com/adarzhpathade">Eligify AI - Government Scheme Discovery Platform</a></strong>: A full-stack platform built with Next.js, TypeScript, Tailwind, Supabase, and Drizzle ORM. Features AI-assisted scheme discovery, secure auth, and document verification.
-- <strong><a href="https://github.com/adarzhpathade">StoreSync – Store Management Platform</a></strong>: A full-stack store management system for small businesses featuring POS billing, inventory management, worker management, and PDF generation.
-</samp>
+
+- <samp><strong><a href="https://github.com/adarzhpathade/Eligify">Eligify AI - Government Scheme Discovery Platform</a></strong>: A full-stack platform built with Next.js, TypeScript, Tailwind, Supabase, and Drizzle ORM. Features AI-assisted scheme discovery, secure auth, and document verification.</samp>
+- <samp><strong><a href="https://github.com/adarzhpathade/StoreSync">StoreSync – Store Management Platform</a></strong>: A full-stack store management system for small businesses featuring POS billing, inventory management, worker management, and PDF generation.</samp>
 
 <br>
 
 <div align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://github-readme-stats.vercel.app/api?username=adarzhpathade&show_icons=true&title_color=ffffff&text_color=ffffff&icon_color=ffffff&bg_color=00000000&hide_border=true">
-    <source media="(prefers-color-scheme: light)" srcset="https://github-readme-stats.vercel.app/api?username=adarzhpathade&show_icons=true&title_color=000000&text_color=000000&icon_color=000000&bg_color=00000000&hide_border=true">
-    <img alt="Adarsh's GitHub Stats" src="https://github-readme-stats.vercel.app/api?username=adarzhpathade&show_icons=true&title_color=000000&text_color=000000&icon_color=000000&bg_color=00000000&hide_border=true">
+    <source media="(prefers-color-scheme: dark)" srcset="https://github-readme-stats.vercel.app/api?username=adarzhpathade&show_icons=true&theme=transparent&hide_border=true&title_color=ffffff&text_color=ffffff&icon_color=ffffff">
+    <source media="(prefers-color-scheme: light)" srcset="https://github-readme-stats.vercel.app/api?username=adarzhpathade&show_icons=true&theme=transparent&hide_border=true&title_color=000000&text_color=000000&icon_color=000000">
+    <img alt="Adarsh's GitHub Stats" src="https://github-readme-stats.vercel.app/api?username=adarzhpathade&show_icons=true&theme=transparent&hide_border=true&title_color=000000&text_color=000000&icon_color=000000">
   </picture>
 </div>
