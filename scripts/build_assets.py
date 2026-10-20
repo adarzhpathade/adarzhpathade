@@ -209,6 +209,26 @@ def toolkit(name, ink):
     s.write("Toolkit — " + ". ".join(f"{label.title()}: {', '.join(items)}" for label, items in rows))
 
 
+def portfolio(name, ink):
+    """Whole image is the link to the portfolio, so it reads as one big call to action."""
+    eiko_scale = 1.08
+    line = [("VISIT MY ", "light", 1), ("portfolio", "eiko", eiko_scale), (" ↗", "light", 1)]
+    size = W / sum(measure(t, f, scale) for t, f, scale in line) * .985
+    baseline = 70 + size * .95  # clears the tall italic f
+    rule = baseline + size * .42  # clears the italic p descender
+
+    s = Svg(name, round(rule + 44))
+    s.text(0, 24, "(03)", "mono", 13, ink, tracking=1, extra=' fill-opacity=".5"')
+    s.text(44, 24, "— PORTFOLIO", "mono", 13, ink, tracking=1)
+    s.text(W, 24, "ADRZ-26.VERCEL.APP", "mono", 13, ink, anchor="end", tracking=1, extra=' fill-opacity=".5"')
+    s.raw(f'<line x1="0" y1="46" x2="{W}" y2="46" stroke="{ink}" stroke-opacity=".2"/>')
+    s.rich(0, baseline, [(t, f, f"{size * scale:.1f}") for t, f, scale in line], f"{size:.1f}", ink)
+    s.raw(f'<line x1="0" y1="{rule:.0f}" x2="{W}" y2="{rule:.0f}" stroke="{ink}" stroke-opacity=".2"/>')
+    s.text(0, rule + 32, "CODE, AI, MOTION & VISUALS", "mono", 13, ink, tracking=1, extra=' fill-opacity=".5"')
+    s.text(W, rule + 32, "(CLICK TO OPEN ↗)", "mono", 13, ink, anchor="end", tracking=1)
+    s.write("Visit my portfolio — adrz-26.vercel.app")
+
+
 def bust_readme_cache():
     """GitHub caches images by URL, so stamp each asset link with a hash of its content."""
     readme = ROOT / "README.md"
@@ -225,4 +245,5 @@ if __name__ == "__main__":
         header(f"header-{theme}.svg", ink)
         about(f"about-{theme}.svg", ink)
         toolkit(f"toolkit-{theme}.svg", ink)
+        portfolio(f"portfolio-{theme}.svg", ink)
     bust_readme_cache()
