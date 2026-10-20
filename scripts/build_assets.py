@@ -198,7 +198,7 @@ def toolkit(name, ink):
         ("BACKEND", ["Node.js", "Express", "PostgreSQL", "MongoDB", "Drizzle ORM", "Supabase"]),
         ("TOOLS", ["Git", "GitHub", "VS Code", "Figma", "Postman", "Vercel"]),
     ]
-    left, row_h, top = 300, 80, RULE_Y
+    left, row_h, top = 300, 104, RULE_Y
 
     def line(items):
         """Comma-separated list whose final joiner is an Eiko italic ampersand."""
@@ -206,17 +206,15 @@ def toolkit(name, ink):
 
     size = min(40, min((W - left) / sum(measure(t, f, 1) for t, f in line(items)) for _, items in rows))
 
-    s = Svg(name, top + row_h * len(rows) + 4)
+    end = top + 24 + row_h * len(rows)
+    s = Svg(name, end + 4)
     section_label(s, "02", "TOOLKIT", ink)
     for i, (label, items) in enumerate(rows):
-        y0 = top + i * row_h
-        rule(s, y0, ink)
-        baseline = y0 + row_h / 2 + size * .35
-        s.text(0, baseline - 4, f"0{i + 1}", "mono", 16, ink, tracking=1, extra=' fill-opacity=".5"')
-        s.text(44, baseline - 4, label, "mono", 16, ink, tracking=1)
-        s.rich(left, baseline, [(t, font, f"{size + (3 if font == 'eiko' else 0):.1f}") for t, font in line(items)],
+        y = top + 56 + i * row_h
+        s.text(left, y, label, "mono", 16, ink, tracking=1.5, extra=' fill-opacity=".55"')
+        s.rich(left, y + 46, [(t, font, f"{size + (3 if font == 'eiko' else 0):.1f}") for t, font in line(items)],
                f"{size:.1f}", ink)
-    rule(s, top + row_h * len(rows), ink)
+    rule(s, end, ink)
     s.write("Toolkit — " + ". ".join(f"{label.title()}: {', '.join(items)}" for label, items in rows))
 
 
@@ -228,12 +226,12 @@ def portfolio(name, ink):
     baseline = 82 + size * .95  # clears the tall italic f
     bottom = baseline + size * .42  # clears the italic p descender
 
-    s = Svg(name, round(bottom + 50))
-    section_label(s, "03", "PORTFOLIO", ink, right="ADRZ-26.VERCEL.APP")
+    caption = bottom + 34
+    s = Svg(name, round(caption + 34))
+    section_label(s, "03", "PORTFOLIO", ink)
     s.rich(0, baseline, [(t, f, f"{size * scale:.1f}") for t, f, scale in line], f"{size:.1f}", ink)
-    rule(s, bottom, ink)
-    s.text(0, bottom + 40, "CODE, AI, MOTION & VISUALS", "mono", LABEL, ink, tracking=1, extra=' fill-opacity=".5"')
-    s.text(W, bottom + 40, "(CLICK TO OPEN ↗)", "mono", LABEL, ink, anchor="end", tracking=1)
+    s.rich(0, caption, [("adrz-26.vercel.app — ", "regular", 24), ("code, AI, motion & visuals", "eiko", 27)], 24, ink)
+    rule(s, caption + 32, ink)
     s.write("Visit my portfolio — adrz-26.vercel.app")
 
 
