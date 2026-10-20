@@ -115,6 +115,8 @@ RISE_CSS = (
 # Labels are sized for phones too: the panels scale down to ~30% of their width there.
 LABEL = 18
 RULE_Y = 58
+# Breathing room left under each section; GitHub stacks the images with no gap of their own.
+GAP = 64
 
 
 def rule(s, y, ink, x2=W):
@@ -131,7 +133,7 @@ def section_label(s, num, title, ink, right=None):
 
 def header(name, ink):
     """Transparent header; one file per GitHub theme so the ink matches the page."""
-    s = Svg(name, 404)
+    s = Svg(name, 384 + GAP)
     s.css.append(RISE_CSS)
     s.text(0, 30, "(PORTFOLIO '26)", "mono", LABEL, ink, tracking=1)
     s.text(W, 30, "(B.TECH CS & IT '28)", "mono", LABEL, ink, anchor="end", tracking=1)
@@ -155,7 +157,7 @@ def header(name, ink):
 
 
 def about(name, ink):
-    s = Svg(name, 430)
+    s = Svg(name, 412 + GAP)
     section_label(s, "01", "ABOUT", ink)
 
     words = [
@@ -198,7 +200,7 @@ def toolkit(name, ink):
         ("BACKEND", ["Node.js", "Express", "PostgreSQL", "MongoDB", "Drizzle ORM", "Supabase"]),
         ("TOOLS", ["Git", "GitHub", "VS Code", "Figma", "Postman", "Vercel"]),
     ]
-    left, row_h, top = 300, 80, RULE_Y
+    left, row_h, top = 300, 104, RULE_Y
 
     def line(items):
         """Comma-separated list whose final joiner is an Eiko italic ampersand."""
@@ -206,17 +208,14 @@ def toolkit(name, ink):
 
     size = min(40, min((W - left) / sum(measure(t, f, 1) for t, f in line(items)) for _, items in rows))
 
-    s = Svg(name, top + row_h * len(rows) + 4)
+    end = top + row_h * len(rows)
+    s = Svg(name, end + GAP)
     section_label(s, "02", "TOOLKIT", ink)
     for i, (label, items) in enumerate(rows):
-        y0 = top + i * row_h
-        rule(s, y0, ink)
-        baseline = y0 + row_h / 2 + size * .35
-        s.text(0, baseline - 4, f"0{i + 1}", "mono", 16, ink, tracking=1, extra=' fill-opacity=".5"')
-        s.text(44, baseline - 4, label, "mono", 16, ink, tracking=1)
-        s.rich(left, baseline, [(t, font, f"{size + (3 if font == 'eiko' else 0):.1f}") for t, font in line(items)],
+        y = top + 56 + i * row_h
+        s.text(left, y, label, "mono", 16, ink, tracking=1.5, extra=' fill-opacity=".55"')
+        s.rich(left, y + 46, [(t, font, f"{size + (3 if font == 'eiko' else 0):.1f}") for t, font in line(items)],
                f"{size:.1f}", ink)
-    rule(s, top + row_h * len(rows), ink)
     s.write("Toolkit — " + ". ".join(f"{label.title()}: {', '.join(items)}" for label, items in rows))
 
 
@@ -228,7 +227,7 @@ def portfolio(name, ink):
     baseline = 82 + size * .95  # clears the tall italic f
     bottom = baseline + size * .42  # clears the italic p descender
 
-    s = Svg(name, round(bottom + 50))
+    s = Svg(name, round(bottom + 46 + GAP))
     section_label(s, "03", "PORTFOLIO", ink, right="ADRZ-26.VERCEL.APP")
     s.rich(0, baseline, [(t, f, f"{size * scale:.1f}") for t, f, scale in line], f"{size:.1f}", ink)
     rule(s, bottom, ink)
