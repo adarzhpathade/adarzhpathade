@@ -60,8 +60,16 @@ class Svg:
         self.used[font].update(s)
         self.body.append(
             f'<text x="{x:.1f}" y="{y:.1f}" class="{font} {cls}" font-size="{size}" fill="{fill}"'
-            f' text-anchor="{anchor}" letter-spacing="{tracking}"{extra}>{escape(s)}</text>'
+            f' text-anchor="{anchor}" letter-spacing="{tracking}" xml:space="preserve"{extra}>{escape(s)}</text>'
         )
+
+    def rich(self, x, y, segments, size, fill):
+        """One text line with inline font changes, so the browser does the spacing. segments: [(text, font, size)]."""
+        spans = []
+        for t, font, fs in segments:
+            self.used[font].update(t)
+            spans.append(f'<tspan class="{font}" font-size="{fs}">{escape(t)}</tspan>')
+        self.body.append(f'<text x="{x:.1f}" y="{y:.1f}" fill="{fill}" font-size="{size}" xml:space="preserve">{"".join(spans)}</text>')
 
     def raw(self, markup):
         self.body.append(markup)
@@ -170,6 +178,37 @@ def about(name, ink):
             "Right now I'm growing into full-stack architecture while sharpening my problem solving with DSA in Java.")
 
 
+def toolkit(name, ink):
+    rows = [
+        ("LANGUAGES", ["Java", "JavaScript", "TypeScript", "HTML", "CSS"]),
+        ("FRONTEND", ["React", "Next.js", "Tailwind CSS", "GSAP", "Framer Motion", "Three.js"]),
+        ("BACKEND", ["Node.js", "Express", "PostgreSQL", "MongoDB", "Drizzle ORM", "Supabase"]),
+        ("TOOLS", ["Git", "GitHub", "VS Code", "Figma", "Postman", "Vercel"]),
+    ]
+    left, row_h, top = 300, 76, 46
+
+    def line(items):
+        """Comma-separated list whose final joiner is an Eiko italic ampersand."""
+        return [(", ".join(items[:-1]) + " ", "light"), ("&", "eiko"), (" " + items[-1], "light")]
+
+    size = min(40, min((W - left) / sum(measure(t, f, 1) for t, f in line(items)) for _, items in rows))
+
+    s = Svg(name, top + row_h * len(rows) + 4)
+    s.text(0, 24, "(02)", "mono", 13, ink, tracking=1, extra=' fill-opacity=".5"')
+    s.text(44, 24, "— TOOLKIT", "mono", 13, ink, tracking=1)
+    for i, (label, items) in enumerate(rows):
+        y0 = top + i * row_h
+        s.raw(f'<line x1="0" y1="{y0}" x2="{W}" y2="{y0}" stroke="{ink}" stroke-opacity=".2"/>')
+        baseline = y0 + row_h / 2 + size * .35
+        s.text(0, baseline - 4, f"0{i + 1}", "mono", 12, ink, tracking=1, extra=' fill-opacity=".5"')
+        s.text(36, baseline - 4, label, "mono", 12, ink, tracking=1)
+        s.rich(left, baseline, [(t, font, f"{size + (3 if font == 'eiko' else 0):.1f}") for t, font in line(items)],
+               f"{size:.1f}", ink)
+    end = top + row_h * len(rows)
+    s.raw(f'<line x1="0" y1="{end}" x2="{W}" y2="{end}" stroke="{ink}" stroke-opacity=".2"/>')
+    s.write("Toolkit — " + ". ".join(f"{label.title()}: {', '.join(items)}" for label, items in rows))
+
+
 def bust_readme_cache():
     """GitHub caches images by URL, so stamp each asset link with a hash of its content."""
     readme = ROOT / "README.md"
@@ -185,4 +224,5 @@ if __name__ == "__main__":
     for theme, ink in (("light", INK), ("dark", PAPER)):
         header(f"header-{theme}.svg", ink)
         about(f"about-{theme}.svg", ink)
+        toolkit(f"toolkit-{theme}.svg", ink)
     bust_readme_cache()
