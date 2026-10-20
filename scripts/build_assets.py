@@ -4,7 +4,9 @@ Usage: python scripts/build_assets.py [path/to/fonts]
 Fonts default to the sibling portfolio project's src/fonts.
 """
 import base64
+import hashlib
 import io
+import re
 import sys
 from html import escape
 from pathlib import Path
@@ -129,7 +131,58 @@ def header(name, ink):
     s.write("ADARSH'26 — frontend developer, B.Tech CS & IT '28")
 
 
+def about(name, ink):
+    s = Svg(name, 400)
+    s.text(0, 24, "(01)", "mono", 13, ink, tracking=1, extra=' fill-opacity=".5"')
+    s.text(44, 24, "— ABOUT", "mono", 13, ink, tracking=1)
+    s.raw(f'<line x1="0" y1="46" x2="{W}" y2="46" stroke="{ink}" stroke-opacity=".2"/>')
+
+    words = [
+        ("I", "light"), ("build", "light"), ("interfaces", "light"), ("that", "light"), ("feel", "eiko"),
+        ("alive", "light"), ("—", "light"), ("responsive,", "light"), ("accessible", "light"), ("and", "light"),
+        ("quietly", "eiko"), ("animated.", "light"), ("Right", "light"), ("now", "light"), ("I'm", "light"),
+        ("growing", "light"), ("into", "light"), ("full-stack", "eiko"), ("architecture", "light"), ("while", "light"),
+        ("sharpening", "light"), ("my", "light"), ("problem", "light"), ("solving", "light"), ("with", "light"),
+        ("DSA", "light"), ("in", "light"), ("Java.", "light"),
+    ]
+    size, lh, left = 42, 54, 300
+    x, y = left, 120
+    for word, font in words:
+        fs = size + (4 if font == "eiko" else 0)
+        w = measure(word, font, fs)
+        if x + w > W:
+            x, y = left, y + lh
+        s.text(x, y, word, font, fs, ink)
+        x += w + measure(" ", "light", size)
+
+    s.raw(f'<line x1="0" y1="316" x2="{W}" y2="316" stroke="{ink}" stroke-opacity=".2"/>')
+    meta = [
+        ("ROLE", "Frontend Developer"),
+        ("EDUCATION", "B.Tech CS & IT, 2024—28"),
+        ("FOCUS", "UI engineering & motion"),
+        ("PRACTICE", "DSA in Java"),
+    ]
+    col = W / 4
+    for i, (k, v) in enumerate(meta):
+        s.text(i * col, 352, k, "mono", 12, ink, tracking=1, extra=' fill-opacity=".5"')
+        s.text(i * col, 384, v, "regular", 20, ink)
+    s.write("About: I build interfaces that feel alive — responsive, accessible and quietly animated. "
+            "Right now I'm growing into full-stack architecture while sharpening my problem solving with DSA in Java.")
+
+
+def bust_readme_cache():
+    """GitHub caches images by URL, so stamp each asset link with a hash of its content."""
+    readme = ROOT / "README.md"
+    text = readme.read_text(encoding="utf-8")
+    for svg in OUT.glob("*.svg"):
+        digest = hashlib.sha1(svg.read_bytes()).hexdigest()[:8]
+        text = re.sub(rf"assets/{re.escape(svg.name)}(\?v=\w+)?", f"assets/{svg.name}?v={digest}", text)
+    readme.write_text(text, encoding="utf-8")
+
+
 if __name__ == "__main__":
     OUT.mkdir(exist_ok=True)
-    header("header-light.svg", INK)
-    header("header-dark.svg", PAPER)
+    for theme, ink in (("light", INK), ("dark", PAPER)):
+        header(f"header-{theme}.svg", ink)
+        about(f"about-{theme}.svg", ink)
+    bust_readme_cache()
