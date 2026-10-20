@@ -104,18 +104,28 @@ RISE_CSS = (
 
 def header(name, ink):
     """Transparent header; one file per GitHub theme so the ink matches the page."""
-    s = Svg(name, 330)
+    s = Svg(name, 390)
     s.css.append(RISE_CSS)
     s.text(0, 24, "(FRONTEND DEVELOPER)", "mono", 13, ink, tracking=1)
     s.text(W, 24, "(B.TECH CS & IT '28)", "mono", 13, ink, anchor="end", tracking=1)
     s.raw(f'<line x1="0" y1="46" x2="{W}" y2="46" stroke="{ink}" stroke-opacity=".2"/>')
 
-    word = "ADARSH'26"
-    size = W / measure(word, "light", 1)
+    letters = [(ch, "light") for ch in "ADARSH"] + [(ch, "eiko") for ch in "'26"]
+    gap = .04  # breathing room between the sans name and the italic year, in em
+    size = W / (sum(measure(ch, font, 1) for ch, font in letters) + gap)
     x, baseline = 0, 290
-    for i, ch in enumerate(word):
-        s.text(x, baseline, ch, "light", f"{size:.1f}", ink, cls="rise", extra=f' style="animation-delay:{.1 + i * .06:.2f}s"')
-        x += measure(ch, "light", size)
+    for i, (ch, font) in enumerate(letters):
+        if ch == "'":
+            x += gap * size
+        s.text(x, baseline, ch, font, f"{size:.1f}", ink, cls="rise", extra=f' style="animation-delay:{.1 + i * .06:.2f}s"')
+        x += measure(ch, font, size)
+
+    tagline = [("FRONTEND — ", "regular"), ("Developer", "eiko")]
+    tsize = 34
+    x = (W - sum(measure(t, f, tsize) for t, f in tagline)) / 2
+    for t, font in tagline:
+        s.text(x, 362, t, font, tsize + (4 if font == "eiko" else 0), ink)
+        x += measure(t, font, tsize)
     s.write("ADARSH'26 — frontend developer, B.Tech CS & IT '28")
 
 
