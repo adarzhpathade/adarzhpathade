@@ -114,36 +114,50 @@ RISE_CSS = (
 
 # Labels are sized for phones too: the panels scale down to ~30% of their width there.
 LABEL = 18
-# Every section hangs off one vertical axis: section markers live left of it, content starts on it.
-AXIS = 300
+RULE_Y = 58
 
 
-def marker(s, x, baseline, num, title, ink):
-    """Big faded Eiko numeral with a mono caption: marks a section without a dividing line."""
-    s.text(x, baseline, num, "eiko", 84, ink, extra=' fill-opacity=".28"')
-    s.text(x + 4, baseline + 36, title, "mono", 16, ink, tracking=1.5, extra=' fill-opacity=".65"')
+def rule(s, y, ink, x2=W):
+    s.raw(f'<line x1="0" y1="{y:.0f}" x2="{x2}" y2="{y:.0f}" stroke="{ink}" stroke-opacity=".2"/>')
 
 
-def intro(name, ink):
-    """Header and About in one image, so the name flows straight into the statement."""
-    s = Svg(name, 880)
+def section_label(s, num, title, ink, right=None):
+    s.text(0, 30, f"({num})", "mono", LABEL, ink, tracking=1, extra=' fill-opacity=".5"')
+    s.text(measure(f"({num}) ", "mono", LABEL, 1), 30, f"— {title}", "mono", LABEL, ink, tracking=1)
+    if right:
+        s.text(W, 30, right, "mono", LABEL, ink, anchor="end", tracking=1, extra=' fill-opacity=".5"')
+    rule(s, RULE_Y, ink)
+
+
+def header(name, ink):
+    """Transparent header; one file per GitHub theme so the ink matches the page."""
+    s = Svg(name, 404)
     s.css.append(RISE_CSS)
-    s.text(0, 30, "(PORTFOLIO '26)", "mono", LABEL, ink, tracking=1, extra=' fill-opacity=".65"')
-    s.text(W, 30, "(B.TECH CS & IT '28)", "mono", LABEL, ink, anchor="end", tracking=1, extra=' fill-opacity=".65"')
+    s.text(0, 30, "(PORTFOLIO '26)", "mono", LABEL, ink, tracking=1)
+    s.text(W, 30, "(B.TECH CS & IT '28)", "mono", LABEL, ink, anchor="end", tracking=1)
+    rule(s, RULE_Y, ink)
 
     letters = [(ch, "light") for ch in "ADARSH"] + [(ch, "eiko") for ch in "'26"]
     gap = .04  # breathing room between the sans name and the italic year, in em
     size = W / (sum(measure(ch, font, 1) for ch, font in letters) + gap)
-    x, baseline = 0, 280
+    x, baseline = 0, 302
     for i, (ch, font) in enumerate(letters):
         if ch == "'":
             x += gap * size
         s.text(x, baseline, ch, font, f"{size:.1f}", ink, cls="rise", extra=f' style="animation-delay:{.1 + i * .06:.2f}s"')
         x += measure(ch, font, size)
-    s.rich(AXIS, 352, [("FRONTEND — ", "regular", 36), ("Developer", "eiko", 40)], 36, ink)
 
-    top = 520
-    marker(s, 0, top, "01", "ABOUT", ink)
+    tagline = [("FRONTEND — ", "regular"), ("Developer", "eiko")]
+    tsize = 36
+    x = (W - sum(measure(t, f, tsize) for t, f in tagline)) / 2
+    s.rich(x, 378, [(t, f, tsize + (4 if f == "eiko" else 0)) for t, f in tagline], tsize, ink)
+    s.write("ADARSH'26 — frontend developer, B.Tech CS & IT '28")
+
+
+def about(name, ink):
+    s = Svg(name, 430)
+    section_label(s, "01", "ABOUT", ink)
+
     words = [
         ("I", "light"), ("build", "light"), ("interfaces", "light"), ("that", "light"), ("feel", "eiko"),
         ("alive", "light"), ("—", "light"), ("responsive,", "light"), ("accessible", "light"), ("and", "light"),
@@ -152,30 +166,29 @@ def intro(name, ink):
         ("sharpening", "light"), ("my", "light"), ("problem", "light"), ("solving", "light"), ("with", "light"),
         ("DSA", "light"), ("in", "light"), ("Java.", "light"),
     ]
-    fsize, lh = 42, 54
-    x, y = AXIS, top - 20
+    size, lh, left = 42, 54, 300
+    x, y = left, 132
     for word, font in words:
-        fs = fsize + (4 if font == "eiko" else 0)
+        fs = size + (4 if font == "eiko" else 0)
         w = measure(word, font, fs)
         if x + w > W:
-            x, y = AXIS, y + lh
+            x, y = left, y + lh
         s.text(x, y, word, font, fs, ink)
-        x += w + measure(" ", "light", fsize)
+        x += w + measure(" ", "light", size)
 
+    rule(s, 330, ink)
     meta = [
         ("ROLE", "Frontend Developer"),
         ("EDUCATION", "B.Tech CS & IT, 2024—28"),
         ("FOCUS", "UI engineering & motion"),
         ("PRACTICE", "DSA in Java"),
     ]
-    col = (W - AXIS) / 2
+    col = W / 4
     for i, (k, v) in enumerate(meta):
-        cx, cy = AXIS + (i % 2) * col, y + 80 + (i // 2) * 78
-        s.text(cx, cy, k, "mono", 16, ink, tracking=1.5, extra=' fill-opacity=".55"')
-        s.text(cx, cy + 34, v, "regular", 26, ink)
-    s.write("ADARSH'26 — frontend developer. About: I build interfaces that feel alive — responsive, accessible "
-            "and quietly animated. Right now I'm growing into full-stack architecture while sharpening my "
-            "problem solving with DSA in Java.")
+        s.text(i * col, 372, k, "mono", 16, ink, tracking=1, extra=' fill-opacity=".5"')
+        s.text(i * col, 410, v, "regular", 24, ink)
+    s.write("About: I build interfaces that feel alive — responsive, accessible and quietly animated. "
+            "Right now I'm growing into full-stack architecture while sharpening my problem solving with DSA in Java.")
 
 
 def toolkit(name, ink):
@@ -185,21 +198,25 @@ def toolkit(name, ink):
         ("BACKEND", ["Node.js", "Express", "PostgreSQL", "MongoDB", "Drizzle ORM", "Supabase"]),
         ("TOOLS", ["Git", "GitHub", "VS Code", "Figma", "Postman", "Vercel"]),
     ]
+    left, row_h, top = 300, 80, RULE_Y
 
     def line(items):
         """Comma-separated list whose final joiner is an Eiko italic ampersand."""
         return [(", ".join(items[:-1]) + " ", "light"), ("&", "eiko"), (" " + items[-1], "light")]
 
-    size = min(40, min((W - AXIS) / sum(measure(t, f, 1) for t, f in line(items)) for _, items in rows))
-    top, row_h = 100, 104
+    size = min(40, min((W - left) / sum(measure(t, f, 1) for t, f in line(items)) for _, items in rows))
 
-    s = Svg(name, top + row_h * len(rows) - 20)
-    marker(s, 0, top, "02", "TOOLKIT", ink)
+    s = Svg(name, top + row_h * len(rows) + 4)
+    section_label(s, "02", "TOOLKIT", ink)
     for i, (label, items) in enumerate(rows):
-        y = top - 48 + i * row_h
-        s.text(AXIS, y, label, "mono", 16, ink, tracking=1.5, extra=' fill-opacity=".55"')
-        s.rich(AXIS, y + 46, [(t, font, f"{size + (3 if font == 'eiko' else 0):.1f}") for t, font in line(items)],
+        y0 = top + i * row_h
+        rule(s, y0, ink)
+        baseline = y0 + row_h / 2 + size * .35
+        s.text(0, baseline - 4, f"0{i + 1}", "mono", 16, ink, tracking=1, extra=' fill-opacity=".5"')
+        s.text(44, baseline - 4, label, "mono", 16, ink, tracking=1)
+        s.rich(left, baseline, [(t, font, f"{size + (3 if font == 'eiko' else 0):.1f}") for t, font in line(items)],
                f"{size:.1f}", ink)
+    rule(s, top + row_h * len(rows), ink)
     s.write("Toolkit — " + ". ".join(f"{label.title()}: {', '.join(items)}" for label, items in rows))
 
 
@@ -208,34 +225,33 @@ def portfolio(name, ink):
     eiko_scale = 1.08
     line = [("VISIT MY ", "light", 1), ("portfolio", "eiko", eiko_scale), (" ↗", "light", 1)]
     size = W / sum(measure(t, f, scale) for t, f, scale in line) * .985
-    top = 100
-    baseline = top + 60 + size * .95  # clears the tall italic f
-    caption = baseline + size * .42 + 20  # clears the italic p descender
+    baseline = 82 + size * .95  # clears the tall italic f
+    bottom = baseline + size * .42  # clears the italic p descender
 
-    s = Svg(name, round(caption + 16))
-    marker(s, 0, top, "03", "PORTFOLIO", ink)
+    s = Svg(name, round(bottom + 50))
+    section_label(s, "03", "PORTFOLIO", ink, right="ADRZ-26.VERCEL.APP")
     s.rich(0, baseline, [(t, f, f"{size * scale:.1f}") for t, f, scale in line], f"{size:.1f}", ink)
-    s.text(AXIS, caption, "ADRZ-26.VERCEL.APP", "mono", LABEL, ink, tracking=1, extra=' fill-opacity=".55"')
-    s.text(W, caption, "(CLICK TO OPEN ↗)", "mono", LABEL, ink, anchor="end", tracking=1)
+    rule(s, bottom, ink)
+    s.text(0, bottom + 40, "CODE, AI, MOTION & VISUALS", "mono", LABEL, ink, tracking=1, extra=' fill-opacity=".5"')
+    s.text(W, bottom + 40, "(CLICK TO OPEN ↗)", "mono", LABEL, ink, anchor="end", tracking=1)
     s.write("Visit my portfolio — adrz-26.vercel.app")
 
 
-CELL = AXIS  # contact row: a marker cell plus three link cells, each as wide as the margin column
-CELL_H = 150
-
-
-def contact_marker(name, ink):
-    s = Svg(name, CELL_H, width=CELL)
-    marker(s, 0, 84, "04", "CONTACT", ink)
+def contact(name, ink):
+    s = Svg(name, RULE_Y + 2)
+    section_label(s, "04", "CONTACT", ink, right="SAY HELLO")
     s.write("Contact")
 
 
-def contact_link(name, ink, word, handle):
-    """One clickable quarter of the contact row."""
-    s = Svg(name, CELL_H, width=CELL)
-    s.rich(0, 76, [(word + " ", "light", 50), ("↗", "light", 40)], 50, ink)
-    s.text(2, 120, handle, "mono", 15, ink, tracking=.5, extra=' fill-opacity=".55"')
-    s.write(f"{word} ↗ {handle}")
+LINK_W = 400
+
+
+def contact_link(name, ink, num, word):
+    """One clickable third of the contact row; the README places three side by side."""
+    s = Svg(name, 150, width=LINK_W)
+    s.text(0, 40, f"({num})", "mono", LABEL, ink, tracking=1, extra=' fill-opacity=".5"')
+    s.rich(0, 118, [(word + " ", "light", 64), ("↗", "light", 52)], 64, ink)
+    s.write(f"{word} ↗")
 
 
 def bust_readme_cache():
@@ -250,15 +266,12 @@ def bust_readme_cache():
 
 if __name__ == "__main__":
     OUT.mkdir(exist_ok=True)
-    for old in OUT.glob("*.svg"):
-        old.unlink()
     for theme, ink in (("light", INK), ("dark", PAPER)):
-        intro(f"intro-{theme}.svg", ink)
+        header(f"header-{theme}.svg", ink)
+        about(f"about-{theme}.svg", ink)
         toolkit(f"toolkit-{theme}.svg", ink)
         portfolio(f"portfolio-{theme}.svg", ink)
-        contact_marker(f"contact-{theme}.svg", ink)
-        for word, handle in (("LinkedIn", "in/adarzhpathade"),
-                             ("Email", "adarzhpathade@gmail.com"),
-                             ("GitHub", "@adarzhpathade")):
-            contact_link(f"contact-{word.lower()}-{theme}.svg", ink, word, handle)
+        contact(f"contact-{theme}.svg", ink)
+        for num, word in (("01", "LinkedIn"), ("02", "Email"), ("03", "GitHub")):
+            contact_link(f"contact-{word.lower()}-{theme}.svg", ink, num, word)
     bust_readme_cache()
