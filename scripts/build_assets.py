@@ -118,7 +118,7 @@ RISE_CSS = (
 )
 
 LABEL = 16
-GAP = 64        # GitHub stacks the images with no gap of their own
+GAP = 96        # GitHub stacks the images with no gap of their own
 GUT = 12        # space between framed cells
 FRAME = .5      # border opacity
 GRAY = {INK: 8, PAPER: 240}
@@ -134,25 +134,27 @@ def field(kind, w, h):
     return FIELDS[key]
 
 
-def picture(s, ink, kind, x, y, w, h, fade=0):
+def picture(s, ink, kind, x, y, w, h, vignette=0):
+    """Dithered art. `vignette` thins the edges out so the art floats instead of sitting in a frame."""
     f = field(kind, w, h)
     v = f[0] if isinstance(f, tuple) else f
-    if fade:  # thin the art out toward the bottom so the caption stays readable
-        v = v * np.clip((h - 30 - np.arange(h)[:, None]) / fade, 0, 1)
+    if vignette:
+        edge = np.minimum(np.arange(h), h - 1 - np.arange(h))[:, None], np.minimum(np.arange(w), w - 1 - np.arange(w))[None, :]
+        v = v * np.clip(np.minimum(*np.broadcast_arrays(*edge)) / vignette, 0, 1)
     s.raw(f'<image x="{x}" y="{y}" width="{w}" height="{h}" href="{art.png_uri(art.dither(v), GRAY[ink])}"/>')
     return f[1] if isinstance(f, tuple) else None
 
 
-def box(s, ink, x, y, w, h, op=FRAME):
-    s.raw(f'<rect x="{x + .5}" y="{y + .5}" width="{w - 1}" height="{h - 1}" fill="none" stroke="{ink}" stroke-opacity="{op}"/>')
+def box(*_a, **_k):
+    """Frames were removed on purpose; kept as a no-op so nothing else has to change."""
 
 
-def corners(s, ink, x, y, w, h, n=9):
-    """Small registration ticks just inside a framed cell."""
-    d = []
-    for cx, cy, sx, sy in ((x + 6, y + 6, 1, 1), (x + w - 6, y + 6, -1, 1), (x + 6, y + h - 6, 1, -1), (x + w - 6, y + h - 6, -1, -1)):
-        d.append(f"M{cx} {cy + sy * n}V{cy}H{cx + sx * n}")
-    s.raw(f'<path d="{"".join(d)}" fill="none" stroke="{ink}" stroke-opacity=".7"/>')
+def corners(*_a, **_k):
+    pass
+
+
+def hairline(s, ink, y, x1=0, x2=W, op=.25):
+    s.raw(f'<line x1="{x1}" y1="{y}" x2="{x2}" y2="{y}" stroke="{ink}" stroke-opacity="{op}"/>')
 
 
 def mono(s, x, y, text, ink, size=LABEL, anchor="start", dim=False, tracking=1.5):
@@ -170,17 +172,14 @@ def pulse_dot(s, ink, cx, cy):
           f'<animate attributeName="r" values="4.5;3.2;4.5" dur="2.4s" repeatCount="indefinite"/></circle>')
 
 
-def bar(s, ink, y, num, title, right):
-    """Section bar: numbered tab, title with a trailing rule, and a boxed status on the right."""
-    h = 44
-    box(s, ink, 0, y, 56, h)
-    mono(s, 28, y + 28, num, ink, anchor="middle")
-    box(s, ink, 56, y, 640, h)
-    mono(s, 82, y + 28, title, ink, size=18, tracking=3)
-    tw = measure(title, "mono", 18, 3)
-    s.raw(f'<line x1="{82 + tw + 18:.0f}" y1="{y + 22}" x2="672" y2="{y + 22}" stroke="{ink}" stroke-opacity=".4"/>')
-    box(s, ink, 696 + GUT, y, W - 696 - GUT, h)
-    return y + h
+def bar(s, ink, y, num, title, right=None):
+    """Section heading: (02) — TITLE on the left, optional note on the right, one hairline under it."""
+    mono(s, 0, y + 24, f"({num})", ink, size=18, dim=True, tracking=1)
+    mono(s, measure(f"({num}) ", "mono", 18, 1), y + 24, f"— {title}", ink, size=18, tracking=1)
+    if right:
+        mono(s, W, y + 24, right, ink, size=18, anchor="end", dim=True, tracking=1)
+    hairline(s, ink, y + 44)
+    return y + 44
 
 
 def wave_band(s, ink, uid, x, y, w, h, dur, phase=0.0, lines=14):
@@ -233,45 +232,34 @@ def orbit_figure(s, ink, cx, cy, R):
 
 
 def header(name, ink):
-    s = Svg(name, 452 + GAP)
+    top, ph = 104, 300
+    s = Svg(name, top + ph + 190 + GAP)
     s.css.append(RISE_CSS)
 
-    # row A: tab, rotating keyword strip, barcode, tagline, star
-    y = 0
-    box(s, ink, 0, y, 56, 44)
-    mono(s, 28, y + 28, "01", ink, anchor="middle")
-    box(s, ink, 56, y, 764, 44)
-    x = 84
+    # heading strip: rotating keywords left, place right
+    mono(s, 0, 24, "(01)", ink, size=18, dim=True, tracking=1)
+    x = measure("(01) ", "mono", 18, 1) + 14
     for k, word in enumerate(["FRONTEND", "MOTION", "CODE", "REPEAT"]):
         vals = ";".join("1" if j == k else ".4" for j in range(4))
-        s.text(x, y + 28, word, "mono", 17, ink, tracking=3,
+        s.text(x, 24, word, "mono", 18, ink, tracking=2,
                inner=f'<animate attributeName="fill-opacity" values="{vals}" keyTimes="0;.25;.5;.75" calcMode="discrete" dur="6s" repeatCount="indefinite"/>')
-        x += measure(word, "mono", 17, 3)
+        x += measure(word, "mono", 18, 2)
         if k < 3:
-            mono(s, x + 14, y + 28, "+", ink, size=17, dim=True)
-            x += 14 + measure("+", "mono", 17, 1.5) + 14
-    box(s, ink, 832, y, 150, 44)
-    bars, bx = [], 846
-    for i in range(34):
-        wid = 1 + (i * 7 % 3)
-        bars.append(f'<rect x="{bx}" y="{y + 11}" width="{wid}" height="22" fill="{ink}" fill-opacity=".75"/>')
-        bx += wid + 1.6 + (i * 5 % 2)
-        if bx > 968:
-            break
-    s.raw("".join(bars))
-    box(s, ink, 994, y, 168, 44)
-    mono(s, 1004, y + 19, "B.TECH CS & IT '28", ink, size=11, tracking=1)
-    mono(s, 1004, y + 35, "DEWAS, INDIA", ink, size=11, tracking=1)
-    box(s, ink, 1174, y, 26, 44)
-    twinkle(s, ink, 1187, 22, 8, 3.2)
+            mono(s, x + 14, 24, "+", ink, size=18, dim=True)
+            x += 28 + measure("+", "mono", 18, 1.5)
+    place = "DEWAS, INDIA"
+    pw = measure(place, "mono", 18, 1)
+    pulse_dot(s, ink, W - pw - 20, 18)
+    mono(s, W, 24, place, ink, size=18, anchor="end", dim=True, tracking=1)
+    hairline(s, ink, 44)
 
-    # row B: name panel + planet
-    y = 56
-    box(s, ink, 0, y, 720, 300)
+    # name + planet
+    planet_w = 480
+    pxx = W - planet_w
     letters = [(ch, "light") for ch in "ADARSH"] + [(ch, "eiko") for ch in "'26"]
     gap = .04
-    size = (720 - 56) / (sum(measure(ch, f, 1) for ch, f in letters) + gap)
-    px, base = 28, y + 62 + size * .74
+    size = (pxx - 56) / (sum(measure(ch, f, 1) for ch, f in letters) + gap)
+    px, base = 0, top + 20 + size * .74
     for i, (ch, f) in enumerate(letters):
         if ch == "'":
             px += gap * size
@@ -279,59 +267,41 @@ def header(name, ink):
                    if f == "eiko" else "")
         s.text(px, base, ch, f, f"{size:.1f}", ink, cls="rise", extra=f' style="animation-delay:{.1 + i * .06:.2f}s"', inner=shimmer)
         px += measure(ch, f, size)
-    ty = y + 214
-    s.raw(f'<line x1="28" y1="{ty}" x2="692" y2="{ty}" stroke="{ink}" stroke-opacity=".35"/>')
-    s.rich(28, ty + 46, [("FRONTEND — ", "regular", 30), ("Developer", "eiko", 34)], 30, ink)
-    mono(s, 28, ty + 74, "INTERFACES THAT FEEL ALIVE", ink, size=14, dim=True)
-    mono(s, 692, ty + 74, "(26)", ink, size=14, anchor="end", dim=True)
+    ty = top + ph - 74
+    s.rich(0, ty + 30, [("FRONTEND — ", "regular", 32), ("Developer", "eiko", 36)], 32, ink)
+    mono(s, 0, ty + 66, "INTERFACES THAT FEEL ALIVE", ink, size=14, dim=True)
 
-    pxx, pw = 720 + GUT, W - 720 - GUT
-    box(s, ink, pxx, y, pw, 300)
-    cx, cy, R, tilt = picture(s, ink, "planet", pxx + 1, y + 1, pw - 2, 298)
-    ox, oy = pxx + 1 + cx, y + 1 + cy
+    cx, cy, R, tilt = picture(s, ink, "planet", pxx, top, planet_w, ph)
+    ox, oy = pxx + cx, top + cy
     s.raw(f'<g transform="rotate({tilt} {ox:.1f} {oy:.1f})"><circle r="4" fill="{ink}"><animateMotion dur="11s" repeatCount="indefinite" '
           f'path="M {ox - R * 1.8:.1f} {oy:.1f} A {R * 1.8:.1f} {R * .5:.1f} 0 1 1 {ox + R * 1.8:.1f} {oy:.1f} A {R * 1.8:.1f} {R * .5:.1f} 0 1 1 {ox - R * 1.8:.1f} {oy:.1f}"/></circle></g>')
-    s.raw(f'<rect y="{y + 2}" width="1.5" height="296" fill="{ink}" opacity="0"><animate attributeName="x" values="{pxx};{W};{W}" keyTimes="0;.5;1" dur="10s" repeatCount="indefinite"/>'
+    s.raw(f'<rect y="{top}" width="1.5" height="{ph}" fill="{ink}" opacity="0"><animate attributeName="x" values="{pxx};{W};{W}" keyTimes="0;.5;1" dur="10s" repeatCount="indefinite"/>'
           '<animate attributeName="opacity" values="0;.5;.5;0;0" keyTimes="0;.05;.45;.5;1" dur="10s" repeatCount="indefinite"/></rect>')
-    corners(s, ink, pxx, y, pw, 300)
-    mono(s, pxx + 18, y + 284, "FIG. 01 / PLANET", ink, size=12, dim=True)
-    mono(s, W - 18, y + 30, "11 / 11", ink, size=12, anchor="end", dim=True)
+    mono(s, pxx, top + ph + 26, "FIG. 01 / PLANET", ink, size=12, dim=True)
 
-    # row C: galaxy, globe, tagline, rocks, index
-    y = 368
-    h = 84
-    box(s, ink, 0, y, 200, h)
-    picture(s, ink, "galaxy", 1, y + 1, 198, h - 2)
-    box(s, ink, 212, y, 84, h)
-    globe(s, ink, 254, y + 42, 28)
-    box(s, ink, 308, y, 312, h)
+    # lower row: galaxy, globe, tagline, rocks, index
+    y, h = top + ph + 84, 96
+    picture(s, ink, "galaxy", 0, y, 230, h, vignette=34)
+    globe(s, ink, 316, y + h / 2, 34)
     for i, line in enumerate(["SAME UNIVERSE.", "DIFFERENT IDEAS.", "ONE SCREEN AT A TIME."]):
-        mono(s, 326, y + 28 + i * 20, line, ink, size=14, tracking=1.5)
-    box(s, ink, 632, y, 378, h)
-    picture(s, ink, "rocks", 633, y + 1, 376, h - 2)
-    box(s, ink, 1022, y, 178, h)
+        mono(s, 400, y + 28 + i * 24, line, ink, size=14, tracking=1.5)
+    picture(s, ink, "rocks", 690, y, 320, h, vignette=34)
     for i, line in enumerate(["BUILD", "LEARN", "SHIP", "REPEAT"]):
-        mono(s, 1040, y + 20 + i * 17, line, ink, size=12, tracking=2.5)
+        mono(s, 1070, y + 22 + i * 21, line, ink, size=13, tracking=3, dim=i < 3)
     s.write("ADARSH'26 — frontend developer, B.Tech CS & IT '28")
 
 
 def about(name, ink):
-    s = Svg(name, 56 + 384 + GAP)
-    bar(s, ink, 0, "02", "ABOUT", "")
-    # status box
-    pulse_dot(s, ink, 696 + GUT + 24, 22)
-    mono(s, 696 + GUT + 42, 28, "STATUS: ONLINE & LEARNING", ink, size=15, tracking=2)
+    top, ch = 96, 400
+    s = Svg(name, top + ch + 56 + GAP)
+    status = "STATUS: ONLINE & LEARNING"
+    bar(s, ink, 0, "02", "ABOUT", status)
+    pulse_dot(s, ink, W - measure(status, "mono", 18, 1) - 20, 18)
 
-    y, h = 56, 384
-    box(s, ink, 0, y, 300, h)
-    orbit_figure(s, ink, 150, y + 170, 118)
-    corners(s, ink, 0, y, 300, h)
-    mono(s, 18, y + h - 18, "FIG. 02 / ORBIT", ink, size=12, dim=True)
+    orbit_figure(s, ink, 150, top + 190, 128)
+    mono(s, 0, top + ch + 26, "FIG. 02 / ORBIT", ink, size=12, dim=True)
 
-    cx0, cw = 312, 576
-    box(s, ink, cx0, y, cw, h)
-    mono(s, cx0 + 24, y + 34, "FRONTEND DEVELOPER", ink, size=13, dim=True)
-    s.raw(f'<line x1="{cx0 + 24}" y1="{y + 48}" x2="{cx0 + cw - 24}" y2="{y + 48}" stroke="{ink}" stroke-opacity=".35"/>')
+    cx0, right = 350, 880
     words = [
         ("I", "light"), ("build", "light"), ("interfaces", "light"), ("that", "light"), ("feel", "eiko"),
         ("alive", "light"), ("—", "light"), ("responsive,", "light"), ("accessible", "light"), ("and", "light"),
@@ -340,35 +310,30 @@ def about(name, ink):
         ("sharpening", "light"), ("my", "light"), ("problem", "light"), ("solving", "light"), ("with", "light"),
         ("DSA", "light"), ("in", "light"), ("Java.", "light"),
     ]
-    size, lh, left, right = 29, 35, cx0 + 24, cx0 + cw - 24
-    x, yy = left, y + 90
+    size, lh = 30, 42
+    x, yy = cx0, top + 36
     for word, font in words:
         fs = size + (3 if font == "eiko" else 0)
         w = measure(word, font, fs)
         if x + w > right:
-            x, yy = left, yy + lh
+            x, yy = cx0, yy + lh
         s.text(x, yy, word, font, fs, ink)
         x += w + measure(" ", "light", size)
-    s.raw(f'<rect x="{x - measure(" ", "light", size) + 6:.1f}" y="{yy - 26}" width="3" height="32" fill="{ink}">'
+    s.raw(f'<rect x="{x - measure(" ", "light", size) + 6:.1f}" y="{yy - 27}" width="3" height="34" fill="{ink}">'
           '<animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;.5;.5;.99;1" dur="1.1s" repeatCount="indefinite"/></rect>')
 
     rows = [("ROLE", "Frontend Developer"), ("EDUCATION", "B.Tech CS & IT, 2024—28"),
             ("FOCUS", "UI engineering & motion"), ("PRACTICE", "DSA in Java")]
-    top = y + h - 4 * 30 - 10
     for i, (k, v) in enumerate(rows):
-        ry = top + i * 30
-        s.raw(f'<line x1="{cx0 + 24}" y1="{ry}" x2="{cx0 + cw - 24}" y2="{ry}" stroke="{ink}" stroke-opacity=".3"/>')
-        mono(s, cx0 + 24, ry + 21, k, ink, size=13, dim=True)
-        s.text(cx0 + 200, ry + 22, v, "regular", 20, ink)
+        ry = top + 276 + i * 38
+        mono(s, cx0, ry, k, ink, size=13, dim=True)
+        s.text(cx0 + 180, ry + 1, v, "regular", 21, ink)
 
-    nx = cx0 + cw + GUT
-    nw = W - nx
-    box(s, ink, nx, y, nw, h)
-    picture(s, ink, "nebula", nx + 1, y + 1, nw - 2, h - 2, fade=60)
-    for i, (tx, ty, r, d) in enumerate([(.22, .2, 7, 2.6), (.7, .34, 5, 3.4), (.45, .62, 9, 4.1), (.82, .78, 5, 2.9), (.16, .8, 4, 3.7)]):
-        twinkle(s, ink, nx + nw * tx, y + h * ty, r, d, i * .6)
-    corners(s, ink, nx, y, nw, h)
-    mono(s, nx + 18, y + h - 18, "FIG. 03 / NEBULA", ink, size=12, dim=True)
+    nx, nw = 930, W - 930
+    picture(s, ink, "nebula", nx, top, nw, ch, vignette=56)
+    for i, (tx, ty, r, d) in enumerate([(.3, .18, 7, 2.6), (.7, .36, 5, 3.4), (.45, .62, 9, 4.1), (.78, .8, 5, 2.9), (.2, .84, 4, 3.7)]):
+        twinkle(s, ink, nx + nw * tx, top + ch * ty, r, d, i * .6)
+    mono(s, nx, top + ch + 26, "FIG. 03 / NEBULA", ink, size=12, dim=True)
     s.write("About: I build interfaces that feel alive — responsive, accessible and quietly animated. "
             "Right now I'm growing into full-stack architecture while sharpening my problem solving with DSA in Java.")
 
@@ -380,53 +345,41 @@ def toolkit(name, ink):
         ("BACKEND", ["Node.js", "Express", "PostgreSQL", "MongoDB", "Drizzle ORM", "Supabase"]),
         ("TOOLS", ["Git", "GitHub", "VS Code", "Figma", "Postman", "Vercel"]),
     ]
-    h = 56 + 58 + 6 * 34 + 22
-    s = Svg(name, 56 + h + GAP)
-    bar(s, ink, 0, "03", "TOOLKIT", "")
-    mono(s, 696 + GUT + 24, 28, "23 TOOLS / 4 LAYERS", ink, size=15, tracking=2)
-    cw = (W - 3 * GUT) / 4
+    top, gut = 96, 40
+    cw = (W - 3 * gut) // 4
+    s = Svg(name, top + 372 + GAP)
+    bar(s, ink, 0, "03", "TOOLKIT", "23 TOOLS / 4 LAYERS")
     for i, (label, items) in enumerate(rows):
-        x, y = round(i * (cw + GUT)), 56
-        box(s, ink, x, y, round(cw), h)
-        wave_band(s, ink, f"wb{i}", x + 1, y + 1, round(cw) - 2, 56, 9 + i * 2, phase=i * 1.3)
-        s.raw(f'<line x1="{x}" y1="{y + 57}" x2="{x + round(cw)}" y2="{y + 57}" stroke="{ink}" stroke-opacity=".5"/>')
-        mono(s, x + 20, y + 90, f"{i + 1:02d} / {label}", ink, size=14, tracking=2)
-        s.raw(f'<line x1="{x + 20}" y1="{y + 104}" x2="{x + round(cw) - 20}" y2="{y + 104}" stroke="{ink}" stroke-opacity=".3"/>')
+        x = i * (cw + gut)
+        wave_band(s, ink, f"wb{i}", x, top, cw, 56, 9 + i * 2, phase=i * 1.3)
+        mono(s, x, top + 104, f"{i + 1:02d} / {label}", ink, size=14, tracking=2, dim=True)
         for j, item in enumerate(items):
-            ly = y + 140 + j * 34
-            mono(s, x + 20, ly, "+", ink, size=16, dim=True)
-            s.text(x + 44, ly, item, "regular", 23, ink)
-        corners(s, ink, x, y, round(cw), h)
+            ly = top + 156 + j * 38
+            mono(s, x, ly, "+", ink, size=16, dim=True)
+            s.text(x + 26, ly, item, "regular", 24, ink)
     s.write("Toolkit — " + ". ".join(f"{label.title()}: {', '.join(items)}" for label, items in rows))
 
 
 def portfolio(name, ink):
     """Whole image is the link to the portfolio."""
-    h = 230
-    s = Svg(name, 56 + h + GAP)
-    bar(s, ink, 0, "04", "PORTFOLIO", "")
-    mono(s, 696 + GUT + 24, 28, "ADRZ-26.VERCEL.APP", ink, size=15, tracking=2)
-    y = 56
-    tw = 790
-    box(s, ink, 0, y, tw, h)
+    top, ah = 96, 190
+    s = Svg(name, top + ah + 56 + GAP)
+    bar(s, ink, 0, "04", "PORTFOLIO", "ADRZ-26.VERCEL.APP")
+    tw = 780
     line = [("VISIT MY ", "light", 1), ("portfolio", "eiko", 1.08), (" ↗", "light", 1)]
-    size = (tw - 56) / sum(measure(t, f, sc) for t, f, sc in line)
-    s.rich(28, y + 40 + size * .78, [(t, f, f"{size * sc:.1f}") for t, f, sc in line], f"{size:.1f}", ink)
-    mono(s, 28, y + h - 22, "CODE, AI, MOTION & VISUALS", ink, size=13, dim=True)
-    mono(s, tw - 28, y + h - 22, "(CLICK TO OPEN ↗)", ink, size=13, anchor="end")
-    corners(s, ink, 0, y, tw, h)
-    rx = tw + GUT
-    box(s, ink, rx, y, W - rx, h)
-    picture(s, ink, "rocks", rx + 1, y + 1, W - rx - 2, h - 2, fade=60)
-    corners(s, ink, rx, y, W - rx, h)
-    mono(s, rx + 18, y + h - 18, "FIG. 04 / TERRAIN", ink, size=12, dim=True)
+    size = tw / sum(measure(t, f, sc) for t, f, sc in line)
+    s.rich(0, top + 20 + size * .78, [(t, f, f"{size * sc:.1f}") for t, f, sc in line], f"{size:.1f}", ink)
+    mono(s, 0, top + ah - 4, "CODE, AI, MOTION & VISUALS", ink, size=14, dim=True)
+    mono(s, tw, top + ah - 4, "(CLICK TO OPEN ↗)", ink, size=14, anchor="end")
+    rx = 880
+    picture(s, ink, "rocks", rx, top, W - rx, ah, vignette=48)
+    mono(s, rx, top + ah + 26, "FIG. 04 / TERRAIN", ink, size=12, dim=True)
     s.write("Visit my portfolio — adrz-26.vercel.app")
 
 
 def contact(name, ink):
     s = Svg(name, 46)
-    bar(s, ink, 0, "05", "CONTACT", "")
-    mono(s, 696 + GUT + 24, 28, "SAY HELLO", ink, size=15, tracking=2)
+    bar(s, ink, 0, "05", "CONTACT", "SAY HELLO")
     s.write("Contact")
 
 
@@ -436,10 +389,8 @@ LINK_W = 400
 def contact_link(name, ink, num, word):
     """One clickable third of the contact row; the README places three side by side."""
     s = Svg(name, 150, width=LINK_W)
-    box(s, ink, 1, 6, LINK_W - 14, 138)
-    corners(s, ink, 1, 6, LINK_W - 14, 138)
-    mono(s, 24, 38, f"({num})", ink, size=14, dim=True)
-    s.rich(24, 112, [(word + " ", "light", 56), ("↗", "light", 46)], 56, ink)
+    mono(s, 0, 40, f"({num})", ink, size=16, dim=True, tracking=1)
+    s.rich(0, 118, [(word + " ", "light", 64), ("↗", "light", 52)], 64, ink)
     s.write(f"{word} ↗")
 
 
