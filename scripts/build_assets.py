@@ -285,7 +285,7 @@ def header(name, ink):
     globe(s, ink, 316, y + h / 2, 34)
     for i, line in enumerate(["SAME UNIVERSE.", "DIFFERENT IDEAS.", "ONE SCREEN AT A TIME."]):
         mono(s, 400, y + 28 + i * 24, line, ink, size=14, tracking=1.5)
-    picture(s, ink, "rocks", 690, y, 320, h, vignette=34)
+    picture(s, ink, "rocks", 690, y, 320, h)
     for i, line in enumerate(["BUILD", "LEARN", "SHIP", "REPEAT"]):
         mono(s, 1070, y + 22 + i * 21, line, ink, size=13, tracking=3, dim=i < 3)
     s.write("ADARSH'26 — frontend developer, B.Tech CS & IT '28")
@@ -372,8 +372,8 @@ def portfolio(name, ink):
     mono(s, 0, top + ah - 4, "CODE, AI, MOTION & VISUALS", ink, size=14, dim=True)
     mono(s, tw, top + ah - 4, "(CLICK TO OPEN ↗)", ink, size=14, anchor="end")
     rx = 880
-    picture(s, ink, "rocks", rx, top, W - rx, ah, vignette=48)
-    mono(s, rx, top + ah + 26, "FIG. 04 / TERRAIN", ink, size=12, dim=True)
+    picture(s, ink, "rocks", rx, top, W - rx, ah)
+    mono(s, rx, top + ah + 26, "FIG. 04 / DRIFT", ink, size=12, dim=True)
     s.write("Visit my portfolio — adrz-26.vercel.app")
 
 

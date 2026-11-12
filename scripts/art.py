@@ -83,28 +83,62 @@ def planet(w, h, seed=3):
     return _stars(v, seed + 9), (cx, cy, R, -17)
 
 
+def _cut(v, lo=.12):
+    """Drop faint values entirely so the dither leaves empty space instead of a haze of dots."""
+    return np.clip((v - lo) / (1 - lo), 0, 1)
+
+
 def galaxy(w, h, seed=5):
+    """Tilted spiral galaxy whose arms fade to nothing well inside the image."""
     y, x = np.mgrid[0:h, 0:w].astype(float)
     ang = np.deg2rad(-24)
-    dx, dy = (x - w / 2) / (w * .62), (y - h / 2) / (h * .9)
+    dx, dy = (x - w / 2) / (w * .8), (y - h / 2) / (h * 1.8)
     rx, ry = dx * np.cos(ang) + dy * np.sin(ang), (-dx * np.sin(ang) + dy * np.cos(ang)) / .42
     r = np.sqrt(rx ** 2 + ry ** 2) + 1e-6
     th = np.arctan2(ry, rx)
     arms = .5 + .5 * np.cos(2 * (th - 3.2 * np.log(r + .08)))
     noise = fbm(h, w, seed, 5, 4)
-    v = (np.exp(-r * 2.4) * (.25 + 1.1 * arms) + 1.4 * np.exp(-r * 11)) * (.55 + .9 * noise)
-    return _stars(v, seed + 1, .002)
+    v = (np.exp(-r * 3.2) * (.2 + 1.2 * arms) + 1.5 * np.exp(-r * 12)) * (.55 + .9 * noise)
+    return _stars(_cut(v, .16), seed + 1, .0005)
 
 
 def nebula(w, h, seed=8):
+    """Irregular gas cloud: noise thresholded and multiplied by a warped blob so the outline is organic."""
+    y, x = np.mgrid[0:h, 0:w].astype(float)
     n = fbm(h, w, seed, 6, 2)
+    warp = fbm(h, w, seed + 7, 3, 2) - .5
+    ex = (x - w * .5) / (w * .5) + warp * .9
+    ey = (y - h * .5) / (h * .5) + (fbm(h, w, seed + 9, 3, 2) - .5) * .9
+    env = np.clip(1 - np.sqrt(ex ** 2 + ey ** 2), 0, 1) ** .7
     m = fbm(h, w, seed + 4, 4, 3)
-    v = np.clip((n - .38) * 2.4, 0, 1) ** 1.2 * (.45 + .8 * m)
-    return _stars(v, seed + 2, .0035)
+    v = np.clip((n - .3) * 2.3, 0, 1) * env * 1.7 * (.5 + .7 * m)
+    return _stars(_cut(v, .1), seed + 2, .0012)
 
 
 def rocks(w, h, seed=11):
-    n = fbm(h, w, seed, 5, 4)
-    ridged = 1 - np.abs(2 * n - 1)
-    m = fbm(h, w, seed + 5, 3, 5)
-    return (ridged ** 4.5) * .85 * (.4 + .6 * m)
+    """A drift of lumpy asteroids lit from the upper left, with empty space between them."""
+    rng = np.random.default_rng(seed)
+    y, x = np.mgrid[0:h, 0:w].astype(float)
+    light = np.array([-.55, -.6, .58])
+    light /= np.linalg.norm(light)
+    tex = fbm(h, w, seed, 5, 6)
+    v = np.zeros((h, w))
+    placed = []
+    for _ in range(400):  # rejection sampling keeps the rocks apart
+        if len(placed) >= max(4, int(w * h / 6000)):
+            break
+        R = rng.uniform(.1, .3) * h
+        cx, cy = rng.uniform(R, w - R), rng.uniform(R * 1.1, h - R * 1.1)
+        if all(np.hypot(cx - ox, cy - oy) > (R + oR) * 1.25 for ox, oy, oR in placed):
+            placed.append((cx, cy, R))
+    for k, (cx, cy, R) in enumerate(placed):
+        dx, dy = (x - cx) / R, (y - cy) / R
+        r = np.sqrt(dx ** 2 + dy ** 2)
+        th = np.arctan2(dy, dx)
+        rad = 1 + .13 * np.sin(3 * th + k) + .08 * np.sin(5 * th + 2 * k) + .05 * np.sin(9 * th + k * 1.7)
+        inside = r < rad
+        nz = np.sqrt(np.clip(1 - (r / rad) ** 2, 0, 1))
+        lam = np.clip(dx * light[0] + dy * light[1] + nz * light[2], 0, 1)
+        rock = lam ** .8 * (.7 + .5 * tex) + .12 * (1 - nz)
+        v = np.where(inside, rock, v)
+    return _stars(v, seed + 3, .0008)
